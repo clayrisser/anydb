@@ -19,15 +19,15 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
         install_requires.append(line)
 
 setup(
-    name='any-dabase',
+    name='anydb',
 
-    version='0.1.3',
+    version='0.1.0',
 
     description='Manage dotfiles with stow',
 
     long_description=long_description,
 
-    url='https://github.com/codejamninja/any-dabase',
+    url='https://github.com/codejamninja/anydb',
 
     author='Jam Risser',
 
@@ -58,6 +58,6 @@ setup(
     include_package_data=True,
 
     entry_points = {
-        'console_scripts': ['any-dabase=any-dabase.__main__:main'],
+        'console_scripts': ['anydb=anydb.__main__:main'],
     }
 )

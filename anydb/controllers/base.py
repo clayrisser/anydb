@@ -5,13 +5,7 @@ class Base(Controller):
     class Meta:
         label = 'base'
         description = 'manage dotfiles with stow'
-        arguments = [
-            (['packages'], {
-                'action': 'store',
-                'help': 'dotfile package names',
-                'nargs': '*'
-            })
-        ]
+        arguments = []
 
     @expose()
     def default(self):

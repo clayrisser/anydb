@@ -1,2 +1,2 @@
 from .base import Base
-from .sync import Sync
+from .mongo import Mongo

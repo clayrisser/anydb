@@ -1,9 +1,12 @@
 from . import controllers, services
 from cfoundation import create_app
 from munch import munchify
+import docker
+import os
 import pydash as _
 import yaml
-import os
+
+client = docker.from_env()
 
 def get_conf():
     conf = {}
@@ -14,12 +17,17 @@ def get_conf():
         with open(user_conf_path, 'r') as f:
             conf = _.merge(conf, yaml.load(f))
     conf = munchify(conf)
-    conf.volumes = os.path.expanduser(conf.volumes)
+    conf.data = os.path.expanduser(conf.data)
     return conf
+
+conf = get_conf()
+if not os.path.exists(conf.data):
+    os.makedirs(conf.data)
 
 App = create_app(
     name='anydb',
     controllers=controllers,
     services=services,
-    conf=get_conf()
+    conf=conf,
+    docker=client
 )

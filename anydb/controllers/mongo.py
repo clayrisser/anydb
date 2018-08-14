@@ -159,7 +159,6 @@ class Mongo(Controller):
             exists = True
             self.restore(options)
         if exists:
-            signal.signal(signal.SIGINT, self.handle_sigint)
             return s.docker.start(options.name, {}, daemon=options.daemon)
         if os.path.exists(options.paths.data):
             shutil.rmtree(options.paths.data)
@@ -183,6 +182,7 @@ class Mongo(Controller):
     @expose()
     def default(self):
         options = self.options
+        signal.signal(signal.SIGINT, self.handle_sigint)
         if options.action == 'start':
             return self.start(options)
         elif options.action == 'stop':

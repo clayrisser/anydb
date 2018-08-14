@@ -147,27 +147,18 @@ class Mongo(Controller):
         if options.reset and options.container.status == 'exited':
             if os.path.exists(options.paths.volumes.data):
                 s.util.rm_contents(options.paths.volumes.data)
-        exists = not not options.container
+        if not options.container:
+            if os.path.exists(options.paths.data):
+                shutil.rmtree(options.paths.data)
+            s.docker.run('mongo', {
+                'name': options.name,
+                'port': options.port,
+                'daemon': True,
+                'volume': options.volumes
+            })
         if options.restore:
-            if not exists:
-                s.docker.run('mongo', {
-                    'name': options.name,
-                    'port': options.port,
-                    'daemon': True,
-                    'volume': options.volumes
-                })
-            exists = True
             self.restore(options)
-        if exists:
-            return s.docker.start(options.name, {}, daemon=options.daemon)
-        if os.path.exists(options.paths.data):
-            shutil.rmtree(options.paths.data)
-        return s.docker.run('mongo', {
-            'name': options.name,
-            'port': options.port,
-            'daemon': options.daemon,
-            'volume': options.volumes
-        })
+        return s.docker.start(options.name, {}, daemon=options.daemon)
 
     def stop(self, options):
         s = self.app.services

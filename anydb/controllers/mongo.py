@@ -113,7 +113,7 @@ class Mongo(Controller):
         docker = self.app.docker
         options = self.options
         s = self.app.services
-        s.docker.stop_container(options.name, signal=sig)
+        s.docker.stop_container(options.name)
         sys.exit(0)
 
     def restore(self, options):

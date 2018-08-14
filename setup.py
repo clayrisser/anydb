@@ -21,7 +21,7 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
 setup(
     name='anydb',
 
-    version='0.2.1',
+    version='0.2.2',
 
     description='Manage dotfiles with stow',
 

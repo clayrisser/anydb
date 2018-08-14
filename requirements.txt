@@ -1,3 +1,4 @@
+-e git+git@github.com:codejamninja/anydb.git@97276a8abc98c751cdddc766c4333f882e273aaa#egg=anydb
 backports.shutil-get-terminal-size==1.0.0
 cement==2.10.12
 certifi==2018.4.16

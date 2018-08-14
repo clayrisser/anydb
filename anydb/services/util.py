@@ -1,5 +1,5 @@
 from cfoundation import Service
-import socket, errno
+import socket, errno, os, shutil
 
 class Util(Service):
     def get_port(self, port):
@@ -11,3 +11,18 @@ class Util(Service):
                 port = self.get_port(port + 1)
         s.close()
         return port
+
+    def get_parg(self, parg, default=None):
+        pargs = self.app.pargs
+        value = default
+        if getattr(pargs, parg):
+            value = getattr(pargs, parg)
+        return value
+
+    def rm_contents(self, path):
+        for filename in os.listdir(path):
+            full_path = os.path.join(path, filename)
+            if os.path.isfile(full_path):
+                os.unlink(full_path)
+            else:
+                shutil.rmtree(full_path)

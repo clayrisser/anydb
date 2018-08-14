@@ -39,7 +39,7 @@ class Docker(Service):
             return value.name == name
         return _.find(docker.containers.list(all=True), find)
 
-    def stop_container(self, name, container=None, signal=None):
+    def stop_container(self, name, container=None):
         if not container:
             container = self.get_container(name)
         if not container:
@@ -49,7 +49,7 @@ class Docker(Service):
             print('\'' + name + '\' already stopped')
             return
         print('stopping \'' + name + '\'')
-        container.kill(signal)
+        container.stop()
         while(True):
             container = self.get_container(name)
             if container.status == 'exited':

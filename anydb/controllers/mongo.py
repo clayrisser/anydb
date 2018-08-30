@@ -116,7 +116,8 @@ class Mongo(Controller):
         s.docker.stop_container(options.name)
         sys.exit(0)
 
-    def restore(self, options):
+    def restore(self):
+        options = self.options
         s = self.app.services
         if not options.container:
             print('\'' + options.name + '\' does not exist')
@@ -137,10 +138,11 @@ class Mongo(Controller):
         if os.path.exists(options.paths.volumes.restore):
             s.util.rm_contents(options.paths.volumes.restore)
         if exited:
-            self.stop(options)
+            self.stop()
 
-    def start(self, options):
+    def start(self):
         conf = self.app.conf
+        options = self.options
         s = self.app.services
         if os.path.exists(options.paths.volumes.restore):
             s.util.rm_contents(options.paths.volumes.restore)
@@ -157,14 +159,16 @@ class Mongo(Controller):
                 'volume': options.volumes
             })
         if options.restore:
-            self.restore(options)
+            self.restore()
         return s.docker.start(options.name, {}, daemon=options.daemon)
 
-    def stop(self, options):
+    def stop(self):
+        options = self.options
         s = self.app.services
         s.docker.stop_container(options.name)
 
-    def remove(self, options):
+    def remove(self):
+        options = self.options
         s = self.app.services
         s.docker.remove_container(options.name)
         if os.path.exists(options.paths.data):
@@ -175,12 +179,12 @@ class Mongo(Controller):
         options = self.options
         signal.signal(signal.SIGINT, self.handle_sigint)
         if options.action == 'start':
-            return self.start(options)
+            return self.start()
         elif options.action == 'stop':
-            return self.stop(options)
+            return self.stop()
         elif options.action == 'rm':
-            return self.remove(options)
+            return self.remove()
         elif options.action == 'remove':
-            return self.remove(options)
+            return self.remove()
         elif options.action == 'restore':
-            return self.restore(options)
+            return self.restore()

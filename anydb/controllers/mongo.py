@@ -7,6 +7,7 @@ from time import sleep
 import os, signal, sys, shutil
 
 class Mongo(Controller):
+    did_reset = False
     stopping = False
 
     class Meta:
@@ -72,6 +73,7 @@ class Mongo(Controller):
                     name = pargs.name[len(pargs.name) - 1]
             else:
                 name = pargs.name[0]
+        name = 'anydb_mongo_' + name
         port = s.util.get_parg('port', conf.mongo.port)
         reset = s.util.get_parg('reset')
         daemon = s.util.get_parg('daemon', False)
@@ -146,9 +148,6 @@ class Mongo(Controller):
         s = self.app.services
         if os.path.exists(options.paths.volumes.restore):
             s.util.rm_contents(options.paths.volumes.restore)
-        if options.reset and options.container.status == 'exited':
-            if os.path.exists(options.paths.volumes.data):
-                s.util.rm_contents(options.paths.volumes.data)
         if not options.container:
             if os.path.exists(options.paths.data):
                 shutil.rmtree(options.paths.data)
@@ -158,6 +157,8 @@ class Mongo(Controller):
                 'daemon': True,
                 'volume': options.volumes
             })
+        if options.reset:
+            self.reset()
         if options.restore:
             self.restore()
         return s.docker.start(options.name, {}, daemon=options.daemon)
@@ -174,6 +175,17 @@ class Mongo(Controller):
         if os.path.exists(options.paths.data):
             shutil.rmtree(options.paths.data)
 
+    def reset(self):
+        if self.did_reset:
+            return
+        self.did_reset = True
+        options = self.options
+        s = self.app.services
+        self.stop()
+        if os.path.exists(options.paths.volumes.data):
+            s.util.rm_contents(options.paths.volumes.data)
+        self.start()
+
     @expose()
     def default(self):
         options = self.options
@@ -188,3 +200,5 @@ class Mongo(Controller):
             return self.remove()
         elif options.action == 'restore':
             return self.restore()
+        elif options.action == 'reset':
+            return self.reset()

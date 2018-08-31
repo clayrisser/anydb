@@ -1,4 +1,5 @@
 backports.shutil-get-terminal-size==1.0.0
+blessings==1.7
 cement==2.10.12
 certifi==2018.4.16
 cfoundation==0.3.1
@@ -10,10 +11,12 @@ docker-pycreds==0.3.0
 enum34==1.1.6
 halo==0.0.12
 idna==2.7
+inquirer==2.4.0
 log-symbols==0.0.11
 munch==2.3.2
 pydash==4.5.0
 PyYAML==3.12
+readchar==2.0.1
 requests==2.19.1
 sarge==0.1.5.post0
 six==1.11.0

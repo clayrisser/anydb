@@ -1,5 +1,6 @@
 from cfoundation import Service
-import socket, errno, os, shutil
+from munch import munchify
+import inquirer, socket, errno, os, shutil
 
 class Util(Service):
     def get_port(self, port):

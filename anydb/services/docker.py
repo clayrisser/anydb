@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE
 from sys import stdout
 from time import sleep
 import pydash as _
+import re
 
 class Docker(Service):
     def run(self, image, config={}, cmd=None):
@@ -31,13 +32,30 @@ class Docker(Service):
         log.debug('command: ' + command)
         run(command)
 
-    def get_container(self, name):
+    def get_container(self, name=None, database=None):
+        containers = self.get_containers(name, database)
+        if not len(containers):
+            return None
+        return containers[0]
+
+    def get_containers(self, name=None, database=None):
         docker = self.app.docker
-        exists = False
-        def find(value):
-            nonlocal exists
-            return value.name == name
-        return _.find(docker.containers.list(all=True), find)
+        if name:
+            if not len(re.findall(r'^anydb_', name)):
+                if database and not len(re.findall(r'^anydb_' + database + '_', name)):
+                    name = 'anydb_' + database + name
+                else:
+                    name = 'anydb_' + name
+        else:
+            if database:
+                name = 'anydb_' + database + '_'
+            else:
+                name = 'anydb_'
+        def filter_(value):
+            if len(re.findall(r'^' + name, value.name)):
+                return True
+            return False
+        return _.filter_(docker.containers.list(all=True), filter_)
 
     def stop_container(self, name, container=None):
         if not container:

@@ -77,7 +77,7 @@ class Mongo(Controller):
         port = s.util.get_parg('port', conf.mongo.port)
         reset = s.util.get_parg('reset')
         daemon = s.util.get_parg('daemon', False)
-        port = str(s.util.get_port(int(port))) + ':27017'
+        port = str(port) + ':27017'
         if restore:
             restore = os.path.expanduser(restore)
         container = s.docker.get_container(name)

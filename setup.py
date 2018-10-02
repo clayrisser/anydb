@@ -1,63 +1,27 @@
-from codecs import open
-from os import path
 from setuptools import setup, find_packages
-from subprocess import check_output
+from anydb.core.version import get_version
 
-here = path.abspath(path.dirname(__file__))
+VERSION = get_version()
 
-check_output(
-    'pandoc --from=markdown --to=rst --output=' + path.join(here, 'README.rst') + ' ' + path.join(here, 'README.md'),
-    shell=True
-)
-
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
-
-install_requires = list()
-with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
-    for line in f.readlines():
-        install_requires.append(line)
+f = open('README.md', 'r')
+LONG_DESCRIPTION = f.read()
+f.close()
 
 setup(
     name='anydb',
-
-    version='0.3.3',
-
-    description='Manage dotfiles with stow',
-
-    long_description=long_description,
-
-    url='https://github.com/codejamninja/anydb',
-
+    version=VERSION,
+    description='run any database',
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/markdown',
     author='Jam Risser',
-
     author_email='jam@codejam.ninja',
-
+    url='https://github.com/codejamninja/anydb',
     license='MIT',
-
-    # https://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Topic :: Utilities',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-    ],
-
-    keywords='ubuntu remaster fork install linux',
-
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-
-    install_requires=install_requires,
-
+    packages=find_packages(exclude=['ez_setup', 'tests*']),
+    package_data={'anydb': ['templates/*']},
     include_package_data=True,
-
-    entry_points = {
-        'console_scripts': ['anydb=anydb.__main__:main'],
-    }
+    entry_points="""
+        [console_scripts]
+        anydb = anydb.main:main
+    """,
 )

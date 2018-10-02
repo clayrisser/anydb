@@ -1,75 +1,69 @@
-# any-database
-
-[![GitHub stars](https://img.shields.io/github/stars/codejamninja/any-database.svg?style=social&label=Stars)](https://github.com/codejamninja/any-database)
-
-> Run any database
-
-Please ★ this repo if you found it useful ★ ★ ★
-
-
-## Features
-
-* Supports MySQL
-* Supports MariaDB
-* Supports Postgres
-* Supports MongoDB
-
+# run any database
 
 ## Installation
 
-```sh
-pip3 install anydb
+```
+$ pip install -r requirements.txt
+
+$ pip install setup.py
+```
+
+## Development
+
+This project includes a number of helpers in the `Makefile` to streamline common development tasks.
+
+### Environment Setup
+
+The following demonstrates setting up and working with a development environment:
+
+```
+### create a virtualenv for development
+
+$ make virtualenv
+
+$ source env/bin/activate
+
+
+### run anydb cli application
+
+$ anydb --help
+
+
+### run pytest / coverage
+
+$ make test
 ```
 
 
-## Dependencies
+### Releasing to PyPi
 
-* [Python 3](https://www.python.org)
-* [Docker](https://www.docker.com)
+Before releasing to PyPi, you must configure your login credentials:
 
+**~/.pypirc**:
 
-## Usage
+```
+[pypi]
+username = YOUR_USERNAME
+password = YOUR_PASSWORD
+```
 
-[Contribute](https://github.com/codejamninja/any-database/blob/master/CONTRIBUTING.md) usage docs
+Then use the included helper function via the `Makefile`:
 
+```
+$ make dist
 
-## Support
+$ make dist-upload
+```
 
-Submit an [issue](https://github.com/codejamninja/any-database/issues/new)
+## Deployments
 
+### Docker
 
-## Screenshots
+Included is a basic `Dockerfile` for building and distributing `AnyDB`,
+and can be built with the included `make` helper:
 
-[Contribute](https://github.com/codejamninja/any-database/blob/master/CONTRIBUTING.md) a screenshot
+```
+$ make docker
 
-
-## Contributing
-
-Review the [guidelines for contributing](https://github.com/codejamninja/any-database/blob/master/CONTRIBUTING.md)
-
-
-## License
-
-[MIT License](https://github.com/codejamninja/any-database/blob/master/LICENSE)
-
-[Jam Risser](https://codejam.ninja) © 2018
-
-
-## Changelog
-
-Review the [changelog](https://github.com/codejamninja/any-database/blob/master/CHANGELOG.md)
-
-
-## Credits
-
-* [Jam Risser](https://codejam.ninja) - Author
-
-
-## Support on Liberapay
-
-A ridiculous amount of coffee ☕ ☕ ☕ was consumed in the process of building this project.
-
-[Add some fuel](https://liberapay.com/codejamninja/donate) if you'd like to keep me going!
-
-[![Liberapay receiving](https://img.shields.io/liberapay/receives/codejamninja.svg?style=flat-square)](https://liberapay.com/codejamninja/donate)
-[![Liberapay patrons](https://img.shields.io/liberapay/patrons/codejamninja.svg?style=flat-square)](https://liberapay.com/codejamninja/donate)
+$ docker run -it anydb --help
+```

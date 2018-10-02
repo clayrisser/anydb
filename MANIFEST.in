@@ -1,2 +1,5 @@
-include anydb/logger.yml
-include anydb/config.yml
+recursive-include *.py
+include setup.cfg
+include README.md CHANGELOG.md LICENSE.md
+include *.txt
+recursive-include anydb/templates *

@@ -1,5 +1,0 @@
-debug: false
-data: ~/.anydb/data
-mongo:
-  port: 27017
-  name: some-mongo

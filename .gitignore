@@ -40,6 +40,7 @@ htmlcov/
 .tox/
 .coverage
 .coverage.*
+coverage-report/
 .cache
 nosetests.xml
 coverage.xml
@@ -102,9 +103,3 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
-# Application
-*.iso
-.tmp/
-README.rst
-*.deb

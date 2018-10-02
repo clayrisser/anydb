@@ -1,12 +1,29 @@
-from cement.core.controller import expose
-from cfoundation import Controller
+from cement import Controller, ex
+from cement.utils.version import get_version_banner
+from ..core.version import get_version
+
+VERSION_BANNER = """
+run any database %s
+%s
+""" % (get_version(), get_version_banner())
+
 
 class Base(Controller):
     class Meta:
         label = 'base'
-        description = 'manage dotfiles with stow'
-        arguments = []
+        epilog = 'usage: anydb mongo run'
+        arguments = [
+            ( [ '-v', '--version' ],
+              { 'action'  : 'version',
+                'version' : VERSION_BANNER } ),
+        ]
 
-    @expose()
-    def default(self):
-        print(self.app.conf)
+
+    def _default(self):
+        self.app.args.print_help()
+
+    @ex(
+        help='nuke all databases',
+    )
+    def nuke(self):
+        print('nuking all databases')

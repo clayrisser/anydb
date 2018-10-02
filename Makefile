@@ -4,10 +4,6 @@ ARGS := ""
 .PHONY: all
 all: clean
 
-.PHONY: start
-start: env
-	@env/bin/python3 anydb $(ARGS)
-
 .PHONY: install
 install: env
 

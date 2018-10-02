@@ -1,20 +1,40 @@
-from cement.core.controller import expose
-from cfoundation import Controller
-from distutils.dir_util import copy_tree
-from munch import munchify
-from pydash import _
-from time import sleep
-import os, signal, sys, shutil
+from cement import Controller, ex
+from ..services import Docker
+
 
 class Mongo(Controller):
-    did_reset = False
-    stopping = False
-
     class Meta:
         label = 'mongo'
-        description = 'mongo database'
+        port = 27017
+        help = 'mongo database'
+        epilog = 'usage: anydb mongo run'
         stacked_on = 'base'
         stacked_type = 'nested'
+
+    @property
+    def name(self):
+        if not self.app.pargs:
+            return ''
+        pargs = self.app.pargs
+        label = self.Meta.label
+        name = 'some' + label
+        if len(pargs.name) > 0:
+            name = pargs.name[0]
+        name = 'anydb_' + label + '_' + name
+        return name
+
+    @property
+    def port(self):
+        if not self.app.pargs:
+            return ''
+        pargs = self.app.pargs
+        port = str(self.Meta.port)
+        if pargs.port:
+            return pargs.port + ':' + port
+        return port + ':' + port
+
+    @ex(
+        help='run mongo database',
         arguments = [
             (['name'], {
                 'action': 'store',
@@ -44,161 +64,97 @@ class Mongo(Controller):
                 'help': 'reset data',
                 'dest': 'reset',
                 'required': False
+            }),
+            (['--rename'], {
+                'action': 'store',
+                'help': 'rename database',
+                'dest': 'rename',
+                'required': False
             })
         ]
-
-    @property
-    def options(self):
-        conf = self.app.conf
+    )
+    def run(self):
         pargs = self.app.pargs
-        s = self.app.services
-        name = conf.mongo.name
-        restore = s.util.get_parg('restore')
-        action = 'start'
-        if pargs.name:
-            if pargs.name[0] == 'restore' \
-               or pargs.name[0] == 'stop' \
-               or pargs.name[0] == 'remove' \
-               or pargs.name[0] == 'rm' \
-               or pargs.name[0] == 'start' \
-               or len(pargs.name) > 1:
-                action = pargs.name[0]
-                if action == 'restore':
-                    if len(pargs.name) < 3:
-                        print('expected the restore path')
-                        sys.exit(1)
-                    restore = pargs.name[len(pargs.name) - 1]
-                    name = pargs.name[len(pargs.name) - 2]
-                else:
-                    name = pargs.name[len(pargs.name) - 1]
-            else:
-                name = pargs.name[0]
-        name = 'anydb_mongo_' + name
-        port = s.util.get_parg('port', conf.mongo.port)
-        reset = s.util.get_parg('reset')
-        daemon = s.util.get_parg('daemon', False)
-        port = str(port) + ':27017'
-        if restore:
-            restore = os.path.expanduser(restore)
-        container = s.docker.get_container(name)
-        data_path = os.path.join(conf.data, 'mongo', name)
-        paths = munchify({
-            'data': data_path,
-            'volumes': {
-                'data': os.path.join(data_path, 'volumes/data'),
-                'restore': os.path.join(data_path, 'volumes/restore')
-            }
-        })
-        volumes = [
-            paths.volumes.data + ':/data/db',
-            paths.volumes.restore + ':/restore'
-        ]
-        return munchify({
-            'action': action,
-            'container': container,
-            'daemon': daemon,
-            'name': name,
-            'paths': paths,
-            'port': port,
-            'reset': reset,
-            'restore': restore,
-            'volumes': volumes
-        })
-
-    def handle_sigint(self, sig, frame):
-        if not self.stopping:
-            print('terminating logs in 5 seconds')
-            print('press CTRL-C again to stop database')
-            self.stopping = True
-            sleep(5)
-            return
-        docker = self.app.docker
-        options = self.options
-        s = self.app.services
-        s.docker.stop_container(options.name)
-        sys.exit(0)
-
-    def restore(self):
-        options = self.options
-        s = self.app.services
-        if not options.container:
-            print('\'' + options.name + '\' does not exist')
-            return
-        exited = False
-        if options.container.status == 'exited':
-            exited = True
-            s.docker.start(options.name, {}, daemon=True)
-        if os.path.exists(options.restore):
-            if os.path.isdir(options.restore):
-                copy_tree(
-                    options.restore,
-                    options.paths.volumes.restore
-                )
-        print('waiting 10 seconds')
-        sleep(10)
-        s.docker.execute(options.name, {}, '/usr/bin/mongorestore /restore')
-        if os.path.exists(options.paths.volumes.restore):
-            s.util.rm_contents(options.paths.volumes.restore)
-        if exited:
-            self.stop()
-
-    def start(self):
-        conf = self.app.conf
-        options = self.options
-        s = self.app.services
-        if os.path.exists(options.paths.volumes.restore):
-            s.util.rm_contents(options.paths.volumes.restore)
-        if not options.container:
-            if os.path.exists(options.paths.data):
-                shutil.rmtree(options.paths.data)
-            s.docker.run('mongo', {
-                'name': options.name,
-                'port': options.port,
-                'daemon': True,
-                'volume': options.volumes
+        log = self.app.log
+        docker = Docker(self.app)
+        log.info('running mongo database \'' + self.name + '\'')
+        container = docker.get_container(self.name)
+        if container:
+            log.info('container already exists')
+        else:
+            docker.run('mongo', {
+                'port': self.port,
+                'name': self.name
             })
-        if options.reset:
-            self.reset()
-        if options.restore:
+        if (pargs.restore):
             self.restore()
-        return s.docker.start(options.name, {}, daemon=options.daemon)
 
+    @ex(
+        help='stop mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': '*'
+            })
+        ]
+    )
     def stop(self):
-        options = self.options
-        s = self.app.services
-        s.docker.stop_container(options.name)
+        log = self.app.log
+        log.info('stopping mongo database \'' + self.name + '\'')
 
-    def remove(self):
-        options = self.options
-        s = self.app.services
-        s.docker.remove_container(options.name)
-        if os.path.exists(options.paths.data):
-            shutil.rmtree(options.paths.data)
+    @ex(
+        help='start mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': '*'
+            })
+        ]
+    )
+    def start(self):
+        log = self.app.log
+        log.info('starting mongo database \'' + self.name + '\'')
 
+    @ex(
+        help='destroy mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': '*'
+            })
+        ]
+    )
+    def destroy(self):
+        log = self.app.log
+        log.info('destroying mongo database \'' + self.name + '\'')
+
+    @ex(
+        help='restore mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': '*'
+            })
+        ]
+    )
+    def restore(self):
+        log = self.app.log
+        log.info('restoring mongo database \'' + self.name + '\'')
+
+    @ex(
+        help='reset mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': '*'
+            })
+        ]
+    )
     def reset(self):
-        if self.did_reset:
-            return
-        self.did_reset = True
-        options = self.options
-        s = self.app.services
-        self.stop()
-        if os.path.exists(options.paths.volumes.data):
-            s.util.rm_contents(options.paths.volumes.data)
-        self.start()
-
-    @expose()
-    def default(self):
-        options = self.options
-        signal.signal(signal.SIGINT, self.handle_sigint)
-        if options.action == 'start':
-            return self.start()
-        elif options.action == 'stop':
-            return self.stop()
-        elif options.action == 'rm':
-            return self.remove()
-        elif options.action == 'remove':
-            return self.remove()
-        elif options.action == 'restore':
-            return self.restore()
-        elif options.action == 'reset':
-            return self.reset()
+        log = self.app.log
+        log.info('resetting mongo database \'' + self.name + '\'')

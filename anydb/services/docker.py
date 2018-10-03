@@ -66,3 +66,13 @@ class Docker():
         if not len(containers):
             return None
         return containers[0]
+
+    def start(self, name, config={}, daemon=False):
+        log = self.app.log
+        command = self.create_command('docker start', config) + ' ' + name
+        log.debug('command: ' + command)
+        run(command)
+        if not daemon:
+            command = 'docker logs --tail 100 -f ' + name
+            log.debug('command: ' + command)
+            run(command)

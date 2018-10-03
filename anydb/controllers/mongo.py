@@ -1,5 +1,7 @@
-from cement import Controller, ex
 from ..services import Docker
+from cement import Controller, ex
+from munch import munchify
+import os
 
 
 class Mongo(Controller):
@@ -33,8 +35,28 @@ class Mongo(Controller):
             return pargs.port + ':' + port
         return port + ':' + port
 
+    @property
+    def paths(self):
+        conf = self.app.conf
+        data_path = os.path.join(conf.data, self.Meta.label, self.name)
+        return munchify({
+            'data': data_path,
+            'volumes': {
+                'data': os.path.join(data_path, 'volumes/data'),
+                'restore': os.path.join(data_path, 'volumes/restore')
+            }
+        })
+
+    @property
+    def volumes(self):
+        paths = self.paths
+        return [
+            paths.volumes.data + ':/data/db',
+            paths.volumes.restore + ':/restore'
+        ]
+
     @ex(
-        help='run mongo database',
+        help='start mongo database',
         arguments = [
             (['name'], {
                 'action': 'store',
@@ -47,7 +69,7 @@ class Mongo(Controller):
                 'dest': 'port',
                 'required': False
             }),
-            (['-d', '--daemon'], {
+            (['--daemon'], {
                 'action': 'store_true',
                 'help': 'run as daemon',
                 'dest': 'daemon',
@@ -73,21 +95,27 @@ class Mongo(Controller):
             })
         ]
     )
-    def run(self):
+    def start(self):
         pargs = self.app.pargs
         log = self.app.log
         docker = Docker(self.app)
-        log.info('running mongo database \'' + self.name + '\'')
-        container = docker.get_container(self.name)
+        name = self.name
+        log.info('starting mongo database \'' + name + '\'')
+        container = docker.get_container(name)
         if container:
             log.info('container already exists')
         else:
             docker.run('mongo', {
+                'daemon': True,
+                'name': name,
                 'port': self.port,
-                'name': self.name
+                'volume': self.volumes
             })
+        if pargs.reset:
+            self.reset()
         if (pargs.restore):
             self.restore()
+        return docker.start(name, {}, daemon=pargs.daemon)
 
     @ex(
         help='stop mongo database',
@@ -102,20 +130,6 @@ class Mongo(Controller):
     def stop(self):
         log = self.app.log
         log.info('stopping mongo database \'' + self.name + '\'')
-
-    @ex(
-        help='start mongo database',
-        arguments = [
-            (['name'], {
-                'action': 'store',
-                'help': 'mongo database name',
-                'nargs': '*'
-            })
-        ]
-    )
-    def start(self):
-        log = self.app.log
-        log.info('starting mongo database \'' + self.name + '\'')
 
     @ex(
         help='destroy mongo database',

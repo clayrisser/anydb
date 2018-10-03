@@ -1,8 +1,4 @@
-Complete output from command git config --get-regexp remote\..*\.url:
-
-----------------------------------------
-## !! Could not determine repository location
-anydb==0.0.1
+-e git+git@github.com:codejamninja/anydb.git@9b54a99d3b609d694bd88ed644f5feabf7995a61#egg=anydb
 cement==3.0.0
 certifi==2018.8.24
 chardet==3.0.4
@@ -12,6 +8,7 @@ docker-pycreds==0.3.0
 idna==2.7
 Jinja2==2.10
 MarkupSafe==1.0
+munch==2.3.2
 pydash==4.7.3
 PyYAML==3.13
 requests==2.19.1

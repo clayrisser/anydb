@@ -18,7 +18,7 @@ class Mongo(Controller):
             return ''
         pargs = self.app.pargs
         label = self.Meta.label
-        name = 'some' + label
+        name = 'some-' + label
         if len(pargs.name) > 0:
             name = pargs.name[0]
         name = 'anydb_' + label + '_' + name
@@ -38,13 +38,21 @@ class Mongo(Controller):
     def paths(self):
         config = self.app.config
         data_path = os.path.abspath(os.path.expanduser(config.get('anydb', 'data')))
-        return munchify({
+        paths = munchify({
             'data': data_path,
             'volumes': {
                 'data': os.path.join(data_path, 'volumes/data'),
                 'restore': os.path.join(data_path, 'volumes/restore')
             }
         })
+        if self.app.pargs:
+            pargs = self.app.pargs
+            if pargs.restore_path:
+                restore = self.app.pargs.restore_path
+                if isinstance(restore, list):
+                    restore = restore[0]
+                paths['restore'] = os.path.abspath(os.path.expanduser(restore))
+        return munchify(paths)
 
     @property
     def volumes(self):
@@ -60,7 +68,7 @@ class Mongo(Controller):
             (['name'], {
                 'action': 'store',
                 'help': 'mongo database name',
-                'nargs': '*'
+                'nargs': 1
             }),
             (['-p', '--port'], {
                 'action': 'store',
@@ -77,7 +85,7 @@ class Mongo(Controller):
             (['-r', '--restore'], {
                 'action': 'store',
                 'help': 'restore mongo data',
-                'dest': 'restore',
+                'dest': 'restore_path',
                 'required': False
             }),
             (['--reset'], {
@@ -97,15 +105,15 @@ class Mongo(Controller):
     def start(self):
         pargs = self.app.pargs
         mongo = MongoService(
-            name = self.name,
-            log = self.app.log,
-            options = munchify({
+            name=self.name,
+            log=self.app.log,
+            options=munchify({
                 'daemon': pargs.daemon,
                 'port': self.port,
                 'rename': pargs.rename,
                 'reset': pargs.reset,
-                'restore': pargs.restore,
-                'volumes': self.volumes
+                'volumes': self.volumes,
+                'paths': self.paths
             })
         )
         mongo.start()
@@ -116,27 +124,33 @@ class Mongo(Controller):
             (['name'], {
                 'action': 'store',
                 'help': 'mongo database name',
-                'nargs': '*'
+                'nargs': 1
             })
         ]
     )
     def stop(self):
-        log = self.app.log
-        log.info('stopping mongo database \'' + self.name + '\'')
+        mongo = MongoService(
+            name=self.name,
+            log=self.app.log
+        )
+        mongo.stop()
 
     @ex(
-        help='destroy mongo database',
+        help='remove mongo database',
         arguments = [
             (['name'], {
                 'action': 'store',
                 'help': 'mongo database name',
-                'nargs': '*'
+                'nargs': 1
             })
         ]
     )
-    def destroy(self):
-        log = self.app.log
-        log.info('destroying mongo database \'' + self.name + '\'')
+    def remove(self):
+        mongo = MongoService(
+            name=self.name,
+            log=self.app.log
+        )
+        mongo.remove()
 
     @ex(
         help='restore mongo database',
@@ -144,13 +158,25 @@ class Mongo(Controller):
             (['name'], {
                 'action': 'store',
                 'help': 'mongo database name',
-                'nargs': '*'
+                'nargs': 1
+            }),
+            (['restore_path'], {
+                'action': 'store',
+                'help': 'restore path',
+                'nargs': 1
             })
         ]
     )
     def restore(self):
-        log = self.app.log
-        log.info('restoring mongo database \'' + self.name + '\'')
+        pargs = self.app.pargs
+        mongo = MongoService(
+            name=self.name,
+            log=self.app.log,
+            options=munchify({
+                'paths': self.paths
+            })
+        )
+        mongo.restore()
 
     @ex(
         help='reset mongo database',
@@ -158,10 +184,66 @@ class Mongo(Controller):
             (['name'], {
                 'action': 'store',
                 'help': 'mongo database name',
-                'nargs': '*'
+                'nargs': 1
             })
         ]
     )
     def reset(self):
-        log = self.app.log
-        log.info('resetting mongo database \'' + self.name + '\'')
+        mongo = MongoService(
+            name=self.name,
+            log=self.app.log
+        )
+        mongo.reset()
+
+    @ex(
+        help='rename mongo database',
+        arguments = [
+            (['name'], {
+                'action': 'store',
+                'help': 'mongo database name',
+                'nargs': 1
+            }),
+            (['database_name'], {
+                'action': 'store',
+                'help': 'mongo database to rename',
+                'nargs': 1
+            })
+        ]
+    )
+    def rename(self):
+        pargs = self.app.pargs
+        mongo = MongoService(
+            name=self.name,
+            log=self.app.log,
+            options=munchify({
+                'database_name': pargs.database_name[0]
+            })
+        )
+        mongo.rename()
+
+    @ex(
+        help='list mongo database'
+    )
+    def list(self):
+        mongo = MongoService(
+            log=self.app.log
+        )
+        mongo.list()
+
+    @ex(
+        help='list mongo database'
+    )
+    def ls(self):
+        mongo = MongoService(
+            log=self.app.log
+        )
+        mongo.list()
+
+    @ex(
+        help='nuke all mongo databases'
+    )
+    def nuke(self):
+        mongo = MongoService(
+            log=self.app.log
+        )
+        mongo.nuke()

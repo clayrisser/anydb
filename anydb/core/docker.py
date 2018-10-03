@@ -76,3 +76,37 @@ class Docker():
             command = 'docker logs --tail 100 -f ' + name
             log.debug('command: ' + command)
             run(command)
+
+    def stop_container(self, name, container=None):
+        log = self.log
+        if not container:
+            container = self.get_container(name)
+        if not container:
+            log.warning('\'' + name + '\' does not exist')
+            return None
+        elif container.status == 'exited':
+            log.warning('\'' + name + '\' already stopped')
+            return None
+        log.info('stopping \'' + name + '\'')
+        container.stop()
+        while(True):
+            container = self.get_container(name)
+            if container.status == 'exited':
+                break
+            sleep(1)
+
+    def remove_container(self, name):
+        log = self.log
+        container = self.get_container(name)
+        if not container:
+            log.warning('\'' + name + '\' does not exist')
+            return None
+        if container.status != 'exited':
+            self.stop_container(name, container=container)
+        container.remove(v=True, force=True)
+
+    def execute(self, name, config={}, cmd='echo'):
+        log = self.log
+        command = self.create_command('docker exec', config) + ' ' + name + ' ' + cmd
+        log.debug('command: ' + command)
+        run(command)

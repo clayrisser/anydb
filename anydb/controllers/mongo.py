@@ -37,8 +37,8 @@ class Mongo(Controller):
 
     @property
     def paths(self):
-        conf = self.app.conf
-        data_path = os.path.join(conf.data, self.Meta.label, self.name)
+        config = self.app.config
+        data_path = os.path.abspath(os.path.expanduser(config.get('anydb', 'data')))
         return munchify({
             'data': data_path,
             'volumes': {

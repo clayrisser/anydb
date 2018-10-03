@@ -40,7 +40,6 @@ def main():
         if (os.path.isfile(config_path)):
             with open(config_path, 'r') as f:
                 app.config.merge({ 'anydb': yaml.load(f) })
-        print(app.config.get('anydb', 'data'))
         try:
             app.run()
         except AssertionError as e:

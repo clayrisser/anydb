@@ -6,11 +6,11 @@ import re
 client = docker.from_env()
 
 class Docker():
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, log=None):
+        self.log = log
 
     def run(self, image, config={}, cmd=None):
-        log = self.app.log
+        log = self.log
         command = self.create_command('docker run', config) + ' ' + image
         if cmd:
             command = command + ' ' + cmd
@@ -68,7 +68,7 @@ class Docker():
         return containers[0]
 
     def start(self, name, config={}, daemon=False):
-        log = self.app.log
+        log = self.log
         command = self.create_command('docker start', config) + ' ' + name
         log.debug('command: ' + command)
         run(command)

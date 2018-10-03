@@ -1,8 +1,7 @@
-from ..core import Docker
+from ..core import MongoService
 from cement import Controller, ex
 from munch import munchify
 import os
-
 
 class Mongo(Controller):
     class Meta:
@@ -97,25 +96,19 @@ class Mongo(Controller):
     )
     def start(self):
         pargs = self.app.pargs
-        log = self.app.log
-        docker = Docker(self.app)
-        name = self.name
-        log.info('starting mongo database \'' + name + '\'')
-        container = docker.get_container(name)
-        if container:
-            log.info('container already exists')
-        else:
-            docker.run('mongo', {
-                'daemon': True,
-                'name': name,
+        mongo = MongoService(
+            name = self.name,
+            log = self.app.log,
+            options = munchify({
+                'daemon': pargs.daemon,
                 'port': self.port,
-                'volume': self.volumes
+                'rename': pargs.rename,
+                'reset': pargs.reset,
+                'restore': pargs.restore,
+                'volumes': self.volumes
             })
-        if pargs.reset:
-            self.reset()
-        if (pargs.restore):
-            self.restore()
-        return docker.start(name, {}, daemon=pargs.daemon)
+        )
+        mongo.start()
 
     @ex(
         help='stop mongo database',

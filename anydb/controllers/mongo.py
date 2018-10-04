@@ -1,8 +1,11 @@
 from ..core import MongoService
 from cement import Controller, ex
+from halo import Halo
 from munch import munchify
 from time import sleep
 import os, signal
+
+spinner = Halo(spinner='dots')
 
 class Mongo(Controller):
     stopping = False
@@ -17,8 +20,8 @@ class Mongo(Controller):
 
     @property
     def name(self):
-        if not self.app.pargs:
-            return ''
+        if not self.app.pargs or 'name' not in self.app.pargs:
+            return None
         pargs = self.app.pargs
         label = self.Meta.label
         name = 'some-' + label
@@ -42,15 +45,16 @@ class Mongo(Controller):
         config = self.app.config
         data_path = os.path.abspath(os.path.expanduser(config.get('anydb', 'data')))
         paths = munchify({
-            'data': data_path,
-            'volumes': {
-                'data': os.path.join(data_path, 'volumes/data'),
-                'restore': os.path.join(data_path, 'volumes/restore')
-            }
+            'data': data_path
         })
+        if self.name:
+            paths['volumes'] = munchify({
+                'data': os.path.join(data_path, self.name, 'volumes/data'),
+                'restore': os.path.join(data_path, self.name, 'volumes/restore')
+            })
         if self.app.pargs:
             pargs = self.app.pargs
-            if pargs.restore_path:
+            if 'restore_path' in pargs and pargs.restore_path:
                 restore = self.app.pargs.restore_path
                 if isinstance(restore, list):
                     restore = restore[0]
@@ -60,6 +64,8 @@ class Mongo(Controller):
     @property
     def volumes(self):
         paths = self.paths
+        if 'volumes' not in paths:
+            return []
         return [
             paths.volumes.data + ':/data/db',
             paths.volumes.restore + ':/restore'
@@ -195,7 +201,10 @@ class Mongo(Controller):
     def reset(self):
         mongo = MongoService(
             name=self.name,
-            log=self.app.log
+            log=self.app.log,
+            options=munchify({
+                'paths': self.paths
+            })
         )
         mongo.reset()
 
@@ -248,7 +257,10 @@ class Mongo(Controller):
     )
     def nuke(self):
         mongo = MongoService(
-            log=self.app.log
+            log=self.app.log,
+            options=munchify({
+                'paths': self.paths
+            })
         )
         mongo.nuke()
 
@@ -258,9 +270,15 @@ class Mongo(Controller):
         timeout = int(config.get('anydb', 'timeout'))
         print()
         if not self.stopping:
-            log.info('terminating logs in ' + str(timeout) + ' seconds')
-            log.info('press CTRL-C again to stop database')
-            self.stopping = True
+            spinner.info('press CTRL-C again to stop database')
+            spinner.start('terminating logs in ' + str(timeout) + ' seconds')
+            self.stopping = 1
             sleep(timeout)
             return None
-        self.stop()
+        if self.stopping == 1:
+            spinner.info('press CTRL-C again to FORCE stop database')
+            self.stopping = 2
+            self.stop()
+        elif self.stopping == 2:
+            spinner.warn('forced stopped database')
+            exit(1)

@@ -1,5 +1,6 @@
 from pydash import _
 from sarge import run
+from time import sleep
 import docker
 import re
 
@@ -14,6 +15,8 @@ class Docker():
         command = self.create_command('docker run', config) + ' ' + image
         if cmd:
             command = command + ' ' + cmd
+        if 'daemon' in config and config.daemon:
+            command = command + ' >/dev/null'
         log.debug('command: ' + command)
         run(command)
 
@@ -69,7 +72,7 @@ class Docker():
 
     def start(self, name, config={}, daemon=False):
         log = self.log
-        command = self.create_command('docker start', config) + ' ' + name
+        command = self.create_command('docker start', config) + ' ' + name + ' >/dev/null'
         log.debug('command: ' + command)
         run(command)
         if not daemon:
@@ -82,12 +85,9 @@ class Docker():
         if not container:
             container = self.get_container(name)
         if not container:
-            log.warning('\'' + name + '\' does not exist')
             return None
         elif container.status == 'exited':
-            log.warning('\'' + name + '\' already stopped')
             return None
-        log.info('stopping \'' + name + '\'')
         container.stop()
         while(True):
             container = self.get_container(name)
@@ -99,7 +99,6 @@ class Docker():
         log = self.log
         container = self.get_container(name)
         if not container:
-            log.warning('\'' + name + '\' does not exist')
             return None
         if container.status != 'exited':
             self.stop_container(name, container=container)
@@ -108,5 +107,7 @@ class Docker():
     def execute(self, name, config={}, cmd='echo'):
         log = self.log
         command = self.create_command('docker exec', config) + ' ' + name + ' ' + cmd
+        if 'daemon' in config and config.daemon:
+            command = command + ' >/dev/null'
         log.debug('command: ' + command)
         run(command)

@@ -29,7 +29,7 @@ class MongoService():
             })
         if options.reset:
             self.reset()
-        if options.paths.restore:
+        if 'restore' in options.paths:
             self.restore()
         if options.rename:
             self.rename()

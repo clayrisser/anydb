@@ -1,9 +1,12 @@
 from ..core import MongoService
 from cement import Controller, ex
 from munch import munchify
-import os
+from time import sleep
+import os, signal
 
 class Mongo(Controller):
+    stopping = False
+
     class Meta:
         label = 'mongo'
         port = 27017
@@ -103,6 +106,7 @@ class Mongo(Controller):
         ]
     )
     def start(self):
+        signal.signal(signal.SIGINT, self.handle_sigint)
         pargs = self.app.pargs
         mongo = MongoService(
             name=self.name,
@@ -247,3 +251,16 @@ class Mongo(Controller):
             log=self.app.log
         )
         mongo.nuke()
+
+    def handle_sigint(self, sig, frame):
+        log = self.app.log
+        config = self.app.config
+        timeout = int(config.get('anydb', 'timeout'))
+        print()
+        if not self.stopping:
+            log.info('terminating logs in ' + str(timeout) + ' seconds')
+            log.info('press CTRL-C again to stop database')
+            self.stopping = True
+            sleep(timeout)
+            return None
+        self.stop()

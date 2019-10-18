@@ -17,7 +17,7 @@ munch==2.3.2
 pydash==4.5.0
 PyYAML==3.12
 readchar==2.0.1
-requests==2.19.1
+requests==2.20.0
 sarge==0.1.5.post0
 six==1.11.0
 spinners==0.0.19

@@ -22,5 +22,5 @@ sarge==0.1.5.post0
 six==1.11.0
 spinners==0.0.19
 termcolor==1.1.0
-urllib3==1.23
+urllib3==1.24.2
 websocket-client==0.48.0

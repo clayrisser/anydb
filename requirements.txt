@@ -15,7 +15,7 @@ inquirer==2.4.0
 log-symbols==0.0.11
 munch==2.3.2
 pydash==4.5.0
-PyYAML==5.1
+PyYAML==5.4
 readchar==2.0.1
 requests==2.20.0
 sarge==0.1.5.post0
